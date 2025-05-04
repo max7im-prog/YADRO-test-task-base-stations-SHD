@@ -240,13 +240,12 @@ public:
             }
             else if (this->queue.size() > this->numTables)
             {
-
                 newEvent.eventID = EventID::outClientExit;
                 this->eventsOut.push_back(newEvent);
                 this->exitClient(newEvent.client, newEvent.timestamp);
             }
             else
-            { // add client to queue only if he isn't already in the queue
+            { // Add client to queue only if he isn't already in the queue
                 if (std::find(this->queue.begin(), this->queue.end(), event.client) == this->queue.end())
                 {
                     this->queue.push_back(event.client);
