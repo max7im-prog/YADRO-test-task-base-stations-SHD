@@ -266,6 +266,7 @@ bool Club::processEventIn(Event event)
                     this->enterTable(table, event.timestamp, newClient);
 
                     newEvent.eventID = EventID::outClientTable;
+                    newEvent.client = newClient;
                     newEvent.numTable = table;
                     this->eventsOut.push_back(newEvent);
                 }
