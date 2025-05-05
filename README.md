@@ -4,7 +4,7 @@
 
 1. Клонировать с подмодулями:
 ```bash
-git clone --recurse-submodules https://github.com/ваш-репозиторий
+git clone --recurse-submodules https://github.com/max7im-prog/YADRO-test-task-base-stations-SHD
 ```
 
 2. Собрать проект:
