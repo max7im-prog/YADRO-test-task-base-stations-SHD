@@ -40,6 +40,9 @@ std::string fromMinToString(std::chrono::minutes m)
 
 std::chrono::minutes minutesAfterMidnight(std::string time_hh_mm)
 {
+    if(time_hh_mm.size() != 5){
+        throw std::invalid_argument("Time should be a string formatted like HH:MM");
+    }
     std::chrono::minutes ret;
     std::istringstream ss(time_hh_mm);
     int hours, minutes;
@@ -50,30 +53,62 @@ std::chrono::minutes minutesAfterMidnight(std::string time_hh_mm)
     return ret;
 }
 
-Event parseLine(std::string line)
-{
+Event parseLine(std::string line) {
     std::istringstream ss(line);
-    std::string temp;
     Event ret = {};
-    int a;
-
-    ss >> temp;
-    ret.timestamp = minutesAfterMidnight(temp);
-
-    ss >> ret.eventID;
-
-    if (ret.eventID == EventID::inClientTable)
-    {
-        ss >> ret.client;
-        ss >> ret.numTable;
-        ret.numTable -= 1; // Numbering starts from 1 instead of 0, so subtract 1
-    }
-    else
-    {
-        ss >> ret.client;
-    }
-
+    ret.eventID = -1; // Default to error state
     ret.fullString = line;
+
+    // Try to parse time
+    std::string timeStr;
+    if (!(ss >> timeStr)) {
+        return ret; // Return error event if can't read time
+    }
+    
+    try {
+        ret.timestamp = minutesAfterMidnight(timeStr);
+    } catch (...) {
+        return ret; // Return error event if time parsing fails
+    }
+
+    // Try to parse event ID
+    if (!(ss >> ret.eventID)) {
+        return ret; // Return error event if can't read event ID
+    }
+
+    // Validate event ID range
+    if (ret.eventID < 1 || ret.eventID > 4) {
+        ret.eventID = -1;
+        return ret;
+    }
+
+    // Try to parse client name
+    if (!(ss >> ret.client)) {
+        ret.eventID = -1;
+        return ret;
+    }
+
+    // Additional parsing for table events
+    if (ret.eventID == EventID::inClientTable) {
+        if (!(ss >> ret.numTable)) {
+            ret.eventID = -1;
+            return ret;
+        }
+        ret.numTable -= 1; // Convert to 0-based index
+        
+        // Validate table number
+        if (ret.numTable < 0) {
+            ret.eventID = -1;
+            return ret;
+        }
+    }
+
+    // Check for extra unexpected tokens
+    std::string extra;
+    if (ss >> extra) {
+        ret.eventID = -1;
+        return ret;
+    }
 
     return ret;
 }
@@ -292,7 +327,7 @@ std::ostream &operator<<(std::ostream &os, const Event &e)
     }
     else if (e.eventID == EventID::inClientTable || e.eventID == EventID::outClientTable)
     {
-        os << " " << e.client << " " << e.numTable;
+        os << " " << e.client << " " << e.numTable+1;
     }
     else
     {

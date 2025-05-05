@@ -36,9 +36,25 @@ int main(int argc, char **argv)
     fin >> club.numTables;
     club.tables.resize(club.numTables);
     fin >> temp;
-    club.timeBegin = minutesAfterMidnight(temp);
+    try
+    {
+        club.timeBegin = minutesAfterMidnight(temp);
+    }
+    catch (...)
+    {
+        std::cerr << "Format error in \"" << temp << "\"" << std::endl;
+        return -1;
+    }
     fin >> temp;
-    club.timeEnd = minutesAfterMidnight(temp);
+    try
+    {
+        club.timeEnd = minutesAfterMidnight(temp);
+    }
+    catch (...)
+    {
+        std::cerr << "Format error in \"" << temp << "\"" << std::endl;
+        return -1;
+    }
     if (club.timeEnd < club.timeBegin)
     {
         club.timeEnd = std::chrono::minutes(club.timeEnd.count() + 24 * 60);
@@ -75,6 +91,11 @@ int main(int argc, char **argv)
             return -1;
         }
         lastTimestamp = e.timestamp;
+        if (e.eventID == -1)
+        {
+            std::cerr << "Format error in line \"" << e.fullString << "\"" << std::endl;
+            return -1;
+        }
     }
 
     // Iterate over eventsIn and compose eventsOut
@@ -88,21 +109,25 @@ int main(int argc, char **argv)
     club.handleRemainingClients();
 
     // Write output into output file
-    std::cout << "----------------------input------------------------------" << std::endl;
-    for (auto event : club.eventsIn)
+    fout.open("output.txt");
+    if (!fout.is_open())
     {
-        std::cout << event << std::endl;
+        std::cerr << "error trying to create/open output file" << std::endl;
+        return -1;
     }
 
-    std::cout << "---------------------output------------------------------" << std::endl;
-    std::cout << fromMinToString(club.timeBegin) << std::endl;
+    fout << fromMinToString(club.timeBegin) << std::endl;
     for (auto event : club.eventsOut)
     {
-        std::cout << event << std::endl;
+        fout << event << std::endl;
     }
-    std::cout << fromMinToString(club.timeEnd) << std::endl;
+    fout << fromMinToString(club.timeEnd) << std::endl;
     for (int i = 0; i < club.numTables; i++)
     {
-        std::cout << i + 1 << " " << club.tables[i].earnings << " " << fromMinToString(club.tables[i].timeUsed) << std::endl;
+        fout << i + 1 << " " << club.tables[i].earnings << " " << fromMinToString(club.tables[i].timeUsed) << std::endl;
     }
+
+    fout.close();
+    std::cout << "Program completed with no errors" << std::endl;
+    return 0;
 }
